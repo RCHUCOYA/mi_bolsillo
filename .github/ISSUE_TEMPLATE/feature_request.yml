@@ -1,0 +1,49 @@
+name: 💡 Solicitud de Funcionalidad
+description: Sugiere una nueva funcionalidad o mejora para MiBolsillo
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ¡Gracias por sugerir una mejora! Descríbela con el mayor detalle posible.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: ¿Qué problema resuelve esta funcionalidad?
+      description: Describe el problema o necesidad que motivó esta solicitud.
+      placeholder: "Me frustra cuando... / Necesito poder..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solución propuesta
+      description: Describe cómo imaginas que debería funcionar.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      description: ¿Has pensado en otras formas de resolver el problema?
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad estimada
+      options:
+        - Baja — sería nice to have
+        - Media — mejoraría bastante la app
+        - Alta — es esencial para el uso diario
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Contexto adicional
+      description: Capturas, mockups, referencias u otro contexto relevante.
