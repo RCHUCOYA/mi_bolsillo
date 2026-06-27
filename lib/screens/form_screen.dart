@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../models/movimiento_model.dart';
 import '../database/database_helper.dart';
+import '../theme/app_theme.dart';
 import '../utils/categorias.dart';
 
 class FormScreen extends StatefulWidget {
@@ -64,7 +65,7 @@ class _FormScreenState extends State<FormScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF6C63FF),
+              primary: AppColors.primary,
               onPrimary: Colors.white,
               surface: Colors.white,
             ),
@@ -84,7 +85,7 @@ class _FormScreenState extends State<FormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Por favor selecciona una categoría'),
-          backgroundColor: Color(0xFF6C63FF),
+          backgroundColor: AppColors.primary,
         ),
       );
       return;
@@ -121,13 +122,12 @@ class _FormScreenState extends State<FormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FF),
       body: Column(
         children: [
           _buildHeader(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -144,7 +144,7 @@ class _FormScreenState extends State<FormScreen> {
                     _buildSelectorFecha(),
                     const SizedBox(height: 16),
                     _buildCampoNotas(),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 24),
                     _buildBotonGuardar(),
                     const SizedBox(height: 16),
                   ],
@@ -159,30 +159,45 @@ class _FormScreenState extends State<FormScreen> {
 
   Widget _buildHeader() {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF6C63FF), Color(0xFF3D5AF1)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
+      decoration: const BoxDecoration(gradient: AppGradients.primary),
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.fromLTRB(8, 6, 20, 18),
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
-              const SizedBox(width: 4),
-              Text(
-                _esEdicion ? 'Editar movimiento' : 'Nuevo movimiento',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+              const SizedBox(width: 2),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _esEdicion ? 'Editar movimiento' : 'Nuevo movimiento',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _esEdicion
+                          ? 'Actualiza los detalles guardados'
+                          : 'Registra una entrada clara y rapida',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.72),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -194,8 +209,6 @@ class _FormScreenState extends State<FormScreen> {
 
   Widget _buildToggleTipo() {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -205,8 +218,8 @@ class _FormScreenState extends State<FormScreen> {
               'Tipo de movimiento',
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A2E),
+                fontWeight: FontWeight.w800,
+                color: AppColors.text,
               ),
             ),
             const SizedBox(height: 12),
@@ -215,9 +228,9 @@ class _FormScreenState extends State<FormScreen> {
                 Expanded(
                   child: _BotonTipo(
                     label: 'Ingreso',
-                    icono: Icons.arrow_upward,
+                    icono: Icons.arrow_upward_rounded,
                     activo: _tipo == 'ingreso',
-                    colorActivo: const Color(0xFF4CAF50),
+                    colorActivo: AppColors.income,
                     onTap: () => setState(() => _tipo = 'ingreso'),
                   ),
                 ),
@@ -225,9 +238,9 @@ class _FormScreenState extends State<FormScreen> {
                 Expanded(
                   child: _BotonTipo(
                     label: 'Egreso',
-                    icono: Icons.arrow_downward,
+                    icono: Icons.arrow_downward_rounded,
                     activo: _tipo == 'egreso',
-                    colorActivo: const Color(0xFFE53935),
+                    colorActivo: AppColors.expense,
                     onTap: () => setState(() => _tipo = 'egreso'),
                   ),
                 ),
@@ -244,7 +257,10 @@ class _FormScreenState extends State<FormScreen> {
       titulo: 'Título',
       child: TextFormField(
         controller: _tituloController,
-        decoration: _inputDecoration('Ej: Almuerzo, Renta, Salario...'),
+        decoration: _inputDecoration(
+          'Ej: Almuerzo, renta, salario...',
+          icono: Icons.edit_note_rounded,
+        ),
         textCapitalization: TextCapitalization.sentences,
         validator: (v) =>
             (v == null || v.trim().isEmpty) ? 'El título es requerido' : null,
@@ -257,7 +273,7 @@ class _FormScreenState extends State<FormScreen> {
       titulo: 'Monto',
       child: TextFormField(
         controller: _montoController,
-        decoration: _inputDecoration('0.00'),
+        decoration: _inputDecoration('0.00', icono: Icons.payments_rounded),
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
@@ -276,8 +292,6 @@ class _FormScreenState extends State<FormScreen> {
 
   Widget _buildSelectorCategoria() {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -287,8 +301,8 @@ class _FormScreenState extends State<FormScreen> {
               'Categoría',
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A2E),
+                fontWeight: FontWeight.w800,
+                color: AppColors.text,
               ),
             ),
             const SizedBox(height: 12),
@@ -297,9 +311,9 @@ class _FormScreenState extends State<FormScreen> {
               physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 5,
-                mainAxisSpacing: 8,
+                mainAxisSpacing: 10,
                 crossAxisSpacing: 8,
-                childAspectRatio: 0.75,
+                childAspectRatio: 0.78,
               ),
               itemCount: categorias.length,
               itemBuilder: (context, index) {
@@ -310,23 +324,21 @@ class _FormScreenState extends State<FormScreen> {
                 final seleccionada = _categoriaSeleccionada == nombre;
 
                 return GestureDetector(
-                  onTap: () =>
-                      setState(() => _categoriaSeleccionada = nombre),
+                  onTap: () => setState(() => _categoriaSeleccionada = nombre),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        width: 44,
-                        height: 44,
+                        width: 46,
+                        height: 46,
                         decoration: BoxDecoration(
                           color: seleccionada
                               ? color
                               : color.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                           border: seleccionada
-                              ? Border.all(
-                                  color: const Color(0xFF6C63FF), width: 2)
+                              ? Border.all(color: AppColors.primary, width: 2)
                               : null,
                           boxShadow: seleccionada
                               ? [
@@ -334,7 +346,7 @@ class _FormScreenState extends State<FormScreen> {
                                     color: color.withValues(alpha: 0.5),
                                     blurRadius: 6,
                                     offset: const Offset(0, 2),
-                                  )
+                                  ),
                                 ]
                               : null,
                         ),
@@ -348,13 +360,13 @@ class _FormScreenState extends State<FormScreen> {
                       Text(
                         nombre,
                         style: TextStyle(
-                          fontSize: 9,
+                          fontSize: 10,
                           fontWeight: seleccionada
-                              ? FontWeight.bold
+                              ? FontWeight.w800
                               : FontWeight.normal,
                           color: seleccionada
-                              ? const Color(0xFF6C63FF)
-                              : const Color(0xFF1A1A2E),
+                              ? AppColors.primary
+                              : AppColors.text,
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 1,
@@ -380,24 +392,31 @@ class _FormScreenState extends State<FormScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(10),
-            color: Colors.grey.shade50,
+            border: Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            color: AppColors.surfaceSoft,
           ),
           child: Row(
             children: [
-              const Icon(Icons.calendar_today,
-                  color: Color(0xFF6C63FF), size: 20),
+              const Icon(
+                Icons.calendar_today_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
               const SizedBox(width: 10),
               Text(
                 DateFormat('dd/MM/yyyy').format(_fechaSeleccionada),
                 style: const TextStyle(
                   fontSize: 15,
-                  color: Color(0xFF1A1A2E),
+                  color: AppColors.text,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               const Spacer(),
-              const Icon(Icons.arrow_drop_down, color: Colors.grey),
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: AppColors.textMuted,
+              ),
             ],
           ),
         ),
@@ -410,7 +429,10 @@ class _FormScreenState extends State<FormScreen> {
       titulo: 'Notas (opcional)',
       child: TextFormField(
         controller: _notasController,
-        decoration: _inputDecoration('Agrega una descripción adicional...'),
+        decoration: _inputDecoration(
+          'Agrega una descripción adicional...',
+          icono: Icons.notes_rounded,
+        ),
         maxLines: 3,
         textCapitalization: TextCapitalization.sentences,
       ),
@@ -423,19 +445,9 @@ class _FormScreenState extends State<FormScreen> {
       height: 52,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6C63FF), Color(0xFF3D5AF1)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF6C63FF).withValues(alpha: 0.4),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          gradient: AppGradients.primary,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          boxShadow: AppShadows.soft(AppColors.primary),
         ),
         child: ElevatedButton(
           onPressed: _guardando ? null : _guardar,
@@ -443,7 +455,8 @@ class _FormScreenState extends State<FormScreen> {
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
           ),
           child: _guardando
               ? const SizedBox(
@@ -467,30 +480,10 @@ class _FormScreenState extends State<FormScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String hint) {
+  InputDecoration _inputDecoration(String hint, {IconData? icono}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFF6C63FF), width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFFE53935)),
-      ),
-      filled: true,
-      fillColor: Colors.grey.shade50,
+      prefixIcon: icono == null ? null : Icon(icono, color: AppColors.primary),
     );
   }
 }
@@ -518,34 +511,25 @@ class _BotonTipo extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: activo ? colorActivo : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: activo ? colorActivo : Colors.grey.shade300,
-            width: 1.5,
-          ),
-          boxShadow: activo
-              ? [
-                  BoxShadow(
-                    color: colorActivo.withValues(alpha: 0.35),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  )
-                ]
-              : null,
+          color: activo ? colorActivo : AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: activo ? colorActivo : AppColors.border),
+          boxShadow: activo ? AppShadows.soft(colorActivo) : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icono,
-                color: activo ? Colors.white : Colors.grey.shade500,
-                size: 18),
+            Icon(
+              icono,
+              color: activo ? Colors.white : AppColors.textMuted,
+              size: 18,
+            ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: activo ? Colors.white : Colors.grey.shade600,
-                fontWeight: FontWeight.w600,
+                color: activo ? Colors.white : AppColors.textMuted,
+                fontWeight: FontWeight.w800,
                 fontSize: 14,
               ),
             ),
@@ -565,8 +549,6 @@ class _CampoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -576,8 +558,8 @@ class _CampoCard extends StatelessWidget {
               titulo,
               style: const TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A2E),
+                fontWeight: FontWeight.w800,
+                color: AppColors.text,
               ),
             ),
             const SizedBox(height: 10),
