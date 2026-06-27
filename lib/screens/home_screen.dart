@@ -272,19 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
               // Fila 1: icono + título + selector de mes
               Row(
                 children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: const Icon(
-                      Icons.account_balance_wallet_rounded,
-                      color: Colors.white,
-                      size: 23,
-                    ),
-                  ),
+                  const _AppLogo(),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
@@ -813,6 +801,128 @@ class _HomeScreenState extends State<HomeScreen> {
               shape: const CircleBorder(),
               child: const Icon(Icons.add_rounded, size: 30),
             ),
+    );
+  }
+}
+
+// ── App Logo animado ─────────────────────────────────────────────────────
+class _AppLogo extends StatefulWidget {
+  const _AppLogo();
+
+  @override
+  State<_AppLogo> createState() => _AppLogoState();
+}
+
+class _AppLogoState extends State<_AppLogo>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _runShimmer();
+  }
+
+  void _runShimmer() {
+    _ctrl.forward(from: 0).then((_) {
+      if (!mounted) return;
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) _runShimmer();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, child) {
+        // posición del barrido: entra por la izquierda, sale por la derecha
+        final sweep = Alignment(_ctrl.value * 4 - 2, 0);
+        return Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0x55FFFFFF), // 0.33 white
+                Color(0x1AFFFFFF), // 0.10 white
+              ],
+            ),
+            border: Border.all(
+              color: const Color(0x66FFFFFF), // 0.40 white
+              width: 1.5,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 14,
+                offset: Offset(0, 6),
+              ),
+              BoxShadow(
+                color: Color(0x1AFFFFFF),
+                blurRadius: 4,
+                offset: Offset(-2, -2),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14.5),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Barrido de shimmer
+                Positioned.fill(
+                  child: Align(
+                    alignment: sweep,
+                    child: Container(
+                      width: 36,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Colors.white.withValues(alpha: 0.0),
+                            Colors.white.withValues(alpha: 0.28),
+                            Colors.white.withValues(alpha: 0.0),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // Ícono principal
+                child!,
+              ],
+            ),
+          ),
+        );
+      },
+      child: const Icon(
+        Icons.account_balance_wallet_rounded,
+        color: Colors.white,
+        size: 27,
+        shadows: [
+          Shadow(
+            color: Color(0x44000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
     );
   }
 }
