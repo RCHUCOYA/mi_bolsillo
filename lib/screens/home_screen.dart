@@ -269,6 +269,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Fila 1: icono + título + selector de mes
               Row(
                 children: [
                   Container(
@@ -288,6 +289,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Expanded(
                     child: Text(
                       'MiBolsillo',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 23,
@@ -295,39 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  // Exportar CSV
-                  IconButton(
-                    padding: const EdgeInsets.all(4),
-                    constraints: const BoxConstraints(
-                      minWidth: 36,
-                      minHeight: 36,
-                    ),
-                    icon: Icon(
-                      Icons.ios_share_rounded,
-                      color: Colors.white.withValues(
-                        alpha: _movimientos.isEmpty ? 0.38 : 1.0,
-                      ),
-                      size: 20,
-                    ),
-                    onPressed: _movimientos.isEmpty ? null : _exportarCSV,
-                  ),
-                  // Búsqueda
-                  IconButton(
-                    padding: const EdgeInsets.all(4),
-                    constraints: const BoxConstraints(
-                      minWidth: 36,
-                      minHeight: 36,
-                    ),
-                    icon: Icon(
-                      _buscando
-                          ? Icons.search_off_rounded
-                          : Icons.search_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    onPressed: _toggleSearch,
-                  ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 8),
                   _MonthSelector(
                     label: mesCapitalizado,
                     onPrevious: () => _cambiarMes(-1),
@@ -335,7 +306,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
+              // Fila 2: contador + filtro activo + acciones
               Row(
                 children: [
                   Expanded(
@@ -350,9 +322,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   if (_filtroActivo != 'Todos')
                     Container(
+                      margin: const EdgeInsets.only(right: 8),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
-                        vertical: 6,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.15),
@@ -367,6 +340,38 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
+                  // Exportar CSV
+                  IconButton(
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                    icon: Icon(
+                      Icons.ios_share_rounded,
+                      color: Colors.white.withValues(
+                        alpha: _movimientos.isEmpty ? 0.38 : 0.85,
+                      ),
+                      size: 19,
+                    ),
+                    onPressed: _movimientos.isEmpty ? null : _exportarCSV,
+                  ),
+                  // Búsqueda
+                  IconButton(
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                    icon: Icon(
+                      _buscando
+                          ? Icons.search_off_rounded
+                          : Icons.search_rounded,
+                      color: Colors.white.withValues(alpha: 0.85),
+                      size: 19,
+                    ),
+                    onPressed: _toggleSearch,
+                  ),
                 ],
               ),
             ],
