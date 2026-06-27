@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'screens/home_screen.dart';
+import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -22,7 +22,9 @@ class MiBolsilloApp extends StatelessWidget {
       ],
       supportedLocales: const [Locale('es', 'ES'), Locale('en', 'US')],
       theme: MiBolsilloTheme.light(),
-      home: const HomeScreen(),
+      darkTheme: MiBolsilloTheme.dark(),
+      themeMode: ThemeMode.system,
+      home: const SplashScreen(),
     );
   }
 }

@@ -11,6 +11,7 @@ class ResumenCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final balance = ingresos - egresos;
     final formatter = NumberFormat.currency(locale: 'es', symbol: '\$');
     final positivo = balance >= 0;
@@ -20,9 +21,9 @@ class ResumenCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       decoration: BoxDecoration(
-        gradient: AppGradients.primary,
+        gradient: colors.primaryGradient,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: AppShadows.soft(AppColors.primary),
+        boxShadow: context.softShadow(colors.primary),
       ),
       child: Stack(
         children: [
@@ -94,7 +95,7 @@ class ResumenCard extends StatelessWidget {
                     minHeight: 7,
                     backgroundColor: Colors.white.withValues(alpha: 0.18),
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      positivo ? AppColors.accent : AppColors.warning,
+                      positivo ? colors.accent : colors.warning,
                     ),
                   ),
                 ),

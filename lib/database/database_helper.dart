@@ -19,11 +19,7 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'mibolsillo.db');
 
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _onCreate,
-    );
+    return await openDatabase(path, version: 1, onCreate: _onCreate);
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -51,16 +47,14 @@ class DatabaseHelper {
 
   Future<List<Movimiento>> getAllMovimientos() async {
     final db = await database;
-    final maps = await db.query(
-      'movimientos',
-      orderBy: 'fecha DESC, id DESC',
-    );
+    final maps = await db.query('movimientos', orderBy: 'fecha DESC, id DESC');
     return maps.map((m) => Movimiento.fromMap(m)).toList();
   }
 
   Future<List<Movimiento>> getMovimientosFiltrados({
     String? tipo,
     String? categoria,
+    DateTime? mes,
   }) async {
     final db = await database;
 
@@ -74,6 +68,10 @@ class DatabaseHelper {
     if (categoria != null && categoria.isNotEmpty) {
       conditions.add('categoria = ?');
       args.add(categoria);
+    }
+    if (mes != null) {
+      conditions.add('fecha LIKE ?');
+      args.add(_mesLike(mes));
     }
 
     final where = conditions.isNotEmpty ? conditions.join(' AND ') : null;
@@ -100,49 +98,49 @@ class DatabaseHelper {
 
   Future<int> deleteMovimiento(int id) async {
     final db = await database;
-    return await db.delete(
-      'movimientos',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('movimientos', where: 'id = ?', whereArgs: [id]);
   }
 
-  Future<double> getTotalByTipo(String tipo) async {
+  Future<double> getTotalByTipo(String tipo, {DateTime? mes}) async {
     final db = await database;
-    final now = DateTime.now();
-    final mesActual =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-%';
 
     final result = await db.rawQuery(
       'SELECT SUM(monto) as total FROM movimientos WHERE tipo = ? AND fecha LIKE ?',
-      [tipo, mesActual],
+      [tipo, _mesLike(mes ?? DateTime.now())],
     );
 
     if (result.isEmpty || result.first['total'] == null) return 0.0;
     return (result.first['total'] as num).toDouble();
   }
 
-  Future<Map<String, double>> getTotalesPorCategoria() async {
+  Future<Map<String, double>> getTotalesPorCategoria({
+    DateTime? mes,
+    String? tipo,
+  }) async {
     final db = await database;
-    final now = DateTime.now();
-    final mesActual =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-%';
+    final conditions = ['fecha LIKE ?'];
+    final args = <dynamic>[_mesLike(mes ?? DateTime.now())];
 
-    final result = await db.rawQuery(
-      '''
+    if (tipo != null && tipo.isNotEmpty) {
+      conditions.add('tipo = ?');
+      args.add(tipo);
+    }
+
+    final result = await db.rawQuery('''
       SELECT categoria, SUM(monto) as total
       FROM movimientos
-      WHERE fecha LIKE ?
+      WHERE ${conditions.join(' AND ')}
       GROUP BY categoria
-      ''',
-      [mesActual],
-    );
+      ''', args);
 
     final Map<String, double> totales = {};
     for (final row in result) {
-      totales[row['categoria'] as String] =
-          (row['total'] as num).toDouble();
+      totales[row['categoria'] as String] = (row['total'] as num).toDouble();
     }
     return totales;
+  }
+
+  String _mesLike(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-%';
   }
 }

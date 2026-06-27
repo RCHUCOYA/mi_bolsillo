@@ -28,6 +28,15 @@ class _FormScreenState extends State<FormScreen> {
 
   bool get _esEdicion => widget.movimiento != null;
 
+  List<Map<String, dynamic>> get _categoriasDisponibles {
+    if (_tipo == 'ingreso') {
+      return categorias
+          .where((c) => ['Salario', 'Trabajo', 'Otros'].contains(c['nombre']))
+          .toList();
+    }
+    return categorias.where((c) => !['Salario'].contains(c['nombre'])).toList();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -62,12 +71,13 @@ class _FormScreenState extends State<FormScreen> {
       lastDate: DateTime(2100),
       locale: const Locale('es', 'ES'),
       builder: (context, child) {
+        final colors = context.colors;
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
+            colorScheme: ColorScheme.light(
+              primary: colors.primary,
               onPrimary: Colors.white,
-              surface: Colors.white,
+              surface: colors.surface,
             ),
           ),
           child: child!,
@@ -83,15 +93,13 @@ class _FormScreenState extends State<FormScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_categoriaSeleccionada == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor selecciona una categoría'),
-          backgroundColor: AppColors.primary,
-        ),
+        const SnackBar(content: Text('Por favor selecciona una categoría')),
       );
       return;
     }
 
     setState(() => _guardando = true);
+    HapticFeedback.mediumImpact();
 
     final db = DatabaseHelper();
     final fechaStr = DateFormat('yyyy-MM-dd').format(_fechaSeleccionada);
@@ -158,8 +166,9 @@ class _FormScreenState extends State<FormScreen> {
   }
 
   Widget _buildHeader() {
+    final colors = context.colors;
     return Container(
-      decoration: const BoxDecoration(gradient: AppGradients.primary),
+      decoration: BoxDecoration(gradient: colors.primaryGradient),
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -208,18 +217,19 @@ class _FormScreenState extends State<FormScreen> {
   }
 
   Widget _buildToggleTipo() {
+    final colors = context.colors;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Tipo de movimiento',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
-                color: AppColors.text,
+                color: colors.text,
               ),
             ),
             const SizedBox(height: 12),
@@ -230,8 +240,18 @@ class _FormScreenState extends State<FormScreen> {
                     label: 'Ingreso',
                     icono: Icons.arrow_upward_rounded,
                     activo: _tipo == 'ingreso',
-                    colorActivo: AppColors.income,
-                    onTap: () => setState(() => _tipo = 'ingreso'),
+                    colorActivo: colors.income,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _tipo = 'ingreso';
+                        if (!_categoriasDisponibles.any(
+                          (c) => c['nombre'] == _categoriaSeleccionada,
+                        )) {
+                          _categoriaSeleccionada = null;
+                        }
+                      });
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -240,8 +260,18 @@ class _FormScreenState extends State<FormScreen> {
                     label: 'Egreso',
                     icono: Icons.arrow_downward_rounded,
                     activo: _tipo == 'egreso',
-                    colorActivo: AppColors.expense,
-                    onTap: () => setState(() => _tipo = 'egreso'),
+                    colorActivo: colors.expense,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _tipo = 'egreso';
+                        if (!_categoriasDisponibles.any(
+                          (c) => c['nombre'] == _categoriaSeleccionada,
+                        )) {
+                          _categoriaSeleccionada = null;
+                        }
+                      });
+                    },
                   ),
                 ),
               ],
@@ -291,18 +321,20 @@ class _FormScreenState extends State<FormScreen> {
   }
 
   Widget _buildSelectorCategoria() {
+    final disponibles = _categoriasDisponibles;
+    final colors = context.colors;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Categoría',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
-                color: AppColors.text,
+                color: colors.text,
               ),
             ),
             const SizedBox(height: 12),
@@ -315,16 +347,19 @@ class _FormScreenState extends State<FormScreen> {
                 crossAxisSpacing: 8,
                 childAspectRatio: 0.78,
               ),
-              itemCount: categorias.length,
+              itemCount: disponibles.length,
               itemBuilder: (context, index) {
-                final cat = categorias[index];
+                final cat = disponibles[index];
                 final nombre = cat['nombre'] as String;
                 final icono = cat['icono'] as IconData;
                 final color = cat['color'] as Color;
                 final seleccionada = _categoriaSeleccionada == nombre;
 
                 return GestureDetector(
-                  onTap: () => setState(() => _categoriaSeleccionada = nombre),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _categoriaSeleccionada = nombre);
+                  },
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -338,7 +373,7 @@ class _FormScreenState extends State<FormScreen> {
                               : color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(AppRadius.md),
                           border: seleccionada
-                              ? Border.all(color: AppColors.primary, width: 2)
+                              ? Border.all(color: colors.primary, width: 2)
                               : null,
                           boxShadow: seleccionada
                               ? [
@@ -364,9 +399,7 @@ class _FormScreenState extends State<FormScreen> {
                           fontWeight: seleccionada
                               ? FontWeight.w800
                               : FontWeight.normal,
-                          color: seleccionada
-                              ? AppColors.primary
-                              : AppColors.text,
+                          color: seleccionada ? colors.primary : colors.text,
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 1,
@@ -384,6 +417,7 @@ class _FormScreenState extends State<FormScreen> {
   }
 
   Widget _buildSelectorFecha() {
+    final colors = context.colors;
     return _CampoCard(
       titulo: 'Fecha',
       child: InkWell(
@@ -392,31 +426,28 @@ class _FormScreenState extends State<FormScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: colors.border),
             borderRadius: BorderRadius.circular(AppRadius.md),
-            color: AppColors.surfaceSoft,
+            color: colors.surfaceSoft,
           ),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.calendar_today_rounded,
-                color: AppColors.primary,
+                color: colors.primary,
                 size: 20,
               ),
               const SizedBox(width: 10),
               Text(
                 DateFormat('dd/MM/yyyy').format(_fechaSeleccionada),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
-                  color: AppColors.text,
+                  color: colors.text,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const Spacer(),
-              const Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: AppColors.textMuted,
-              ),
+              Icon(Icons.keyboard_arrow_down_rounded, color: colors.textMuted),
             ],
           ),
         ),
@@ -440,14 +471,15 @@ class _FormScreenState extends State<FormScreen> {
   }
 
   Widget _buildBotonGuardar() {
+    final colors = context.colors;
     return SizedBox(
       width: double.infinity,
       height: 52,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: AppGradients.primary,
+          gradient: colors.primaryGradient,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          boxShadow: AppShadows.soft(AppColors.primary),
+          boxShadow: context.softShadow(colors.primary),
         ),
         child: ElevatedButton(
           onPressed: _guardando ? null : _guardar,
@@ -481,9 +513,10 @@ class _FormScreenState extends State<FormScreen> {
   }
 
   InputDecoration _inputDecoration(String hint, {IconData? icono}) {
+    final colors = context.colors;
     return InputDecoration(
       hintText: hint,
-      prefixIcon: icono == null ? null : Icon(icono, color: AppColors.primary),
+      prefixIcon: icono == null ? null : Icon(icono, color: colors.primary),
     );
   }
 }
@@ -505,30 +538,31 @@ class _BotonTipo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: activo ? colorActivo : AppColors.surfaceSoft,
+          color: activo ? colorActivo : colors.surfaceSoft,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: activo ? colorActivo : AppColors.border),
-          boxShadow: activo ? AppShadows.soft(colorActivo) : null,
+          border: Border.all(color: activo ? colorActivo : colors.border),
+          boxShadow: activo ? context.softShadow(colorActivo) : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icono,
-              color: activo ? Colors.white : AppColors.textMuted,
+              color: activo ? Colors.white : colors.textMuted,
               size: 18,
             ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: activo ? Colors.white : AppColors.textMuted,
+                color: activo ? Colors.white : colors.textMuted,
                 fontWeight: FontWeight.w800,
                 fontSize: 14,
               ),
@@ -548,6 +582,7 @@ class _CampoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -556,10 +591,10 @@ class _CampoCard extends StatelessWidget {
           children: [
             Text(
               titulo,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
-                color: AppColors.text,
+                color: colors.text,
               ),
             ),
             const SizedBox(height: 10),
