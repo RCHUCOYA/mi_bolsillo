@@ -154,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (_cargando)
                     const DashboardSkeleton()
                   else if (_movimientos.isEmpty)
-                    SliverFillRemaining(child: _buildEstadoVacio())
+                    SliverToBoxAdapter(child: _buildEstadoVacio())
                   else
                     _buildMovimientosAgrupados(),
                 ],
@@ -457,28 +457,28 @@ class _HomeScreenState extends State<HomeScreen> {
         ? 'No hay movimientos para "$_filtroActivo" en $labelMes.'
         : 'Registra tu primer ingreso o gasto para ver el resumen de $labelMes.';
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 18, 28, 112),
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 104,
-              height: 104,
+              width: 84,
+              height: 84,
               decoration: BoxDecoration(
                 color: colors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(24),
               ),
               child: Icon(
                 hayFiltro
                     ? Icons.filter_alt_off_rounded
                     : Icons.receipt_long_rounded,
-                size: 52,
+                size: 42,
                 color: colors.primary,
               ),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 18),
             Text(
               titulo,
               style: TextStyle(
