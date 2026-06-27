@@ -1,30 +1,20 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white"/>
-<img src="https://img.shields.io/badge/Dart-3.x-0175C2?style=for-the-badge&logo=dart&logoColor=white"/>
-<img src="https://img.shields.io/badge/SQLite-Local%20DB-003B57?style=for-the-badge&logo=sqlite&logoColor=white"/>
-<img src="https://img.shields.io/badge/License-MIT-6C63FF?style=for-the-badge"/>
-<img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS-lightgrey?style=for-the-badge"/>
-
-# 💜 MiBolsillo
-
-**App móvil de gestión de gastos e ingresos personales**  
-Lleva el control de tus finanzas de forma simple, rápida y sin conexión a internet.
-
-[✨ Características](#-características) • [🚀 Inicio rápido](#-inicio-rápido) • [🗂 Estructura](#-estructura-del-proyecto) • [🤝 Contribuir](#-contribuir)
-
-</div>
-
 ---
 
 ## ✨ Características
 
-- 📊 **Dashboard mensual** — balance, ingresos y egresos del mes en tiempo real
-- ➕ **Registrar movimientos** — título, monto, categoría, fecha y notas
-- ✏️ **Editar y eliminar** — tap para editar, long press para eliminar
-- 🔍 **Filtros inteligentes** — por tipo (ingreso/egreso) y por categoría
-- 💾 **Base de datos local** — SQLite con `sqflite`, sin necesidad de internet
-- 🎨 **Diseño moderno** — Material 3, gradientes morado + azul, animaciones suaves
+- 📊 **Dashboard mensual** — balance, ingresos, egresos y comparativa con el mes anterior
+- 📈 **Gráfico de tendencias** — evolución de ingresos vs egresos en los últimos meses
+- 🍩 **Gráfico por categoría** — distribución de gastos en forma de dona
+- ➕ **Registrar movimientos** — título, monto, categoría, fecha y notas opcionales
+- ✏️ **Editar y eliminar** — formulario reutilizable para crear y editar
+- 🔍 **Búsqueda y filtros** — búsqueda por texto, filtro por tipo (Todos/Ingresos/Egresos) y por categoría
+- 📅 **Selector de mes** — navega entre meses para ver el historial
+- 🔃 **Ordenación** — por fecha, monto o alfabético
+- 📤 **Compartir** — exporta y comparte los datos via `share_plus`
+- 💾 **Base de datos local** — SQLite con `sqflite 2.3.2`, sin servidor, sin internet
+- 🌙 **Modo oscuro/claro** — sigue la configuración del sistema automáticamente
 - 📱 **100% offline** — tus datos nunca salen del dispositivo
 
 ---
@@ -34,47 +24,78 @@ Lleva el control de tus finanzas de forma simple, rápida y sin conexión a inte
 ```
 mi_bolsillo/
 ├── lib/
-│   ├── main.dart                      # Punto de entrada, tema global
+│   ├── main.dart                           # Punto de entrada, MaterialApp, tema, localización
 │   ├── database/
-│   │   └── database_helper.dart       # Singleton SQLite, CRUD + resúmenes
+│   │   └── database_helper.dart            # Singleton SQLite: CRUD, totales, tendencias
 │   ├── models/
-│   │   └── movimiento_model.dart      # Modelo de datos con toMap/fromMap
+│   │   └── movimiento_model.dart           # Modelo Movimiento con toMap/fromMap/copyWith
 │   ├── screens/
-│   │   ├── home_screen.dart           # Pantalla principal con lista y filtros
-│   │   └── form_screen.dart           # Formulario crear/editar movimiento
+│   │   ├── splash_screen.dart              # Pantalla de carga inicial
+│   │   ├── home_screen.dart                # Dashboard: resumen, gráficas, lista y filtros
+│   │   ├── form_screen.dart                # Formulario crear/editar movimiento
+│   │   └── movimiento_detail_screen.dart   # Vista detalle de un movimiento
+│   ├── theme/
+│   │   └── app_theme.dart                  # AppPalette (ThemeExtension), tema claro y oscuro
 │   ├── utils/
-│   │   └── categorias.dart            # 10 categorías fijas con icono y color
+│   │   └── categorias.dart                 # 10 categorías con icono y color
 │   └── widgets/
-│       ├── resumen_card.dart          # Tarjeta de balance mensual
-│       └── movimiento_tile.dart       # Item de lista con acciones
-└── test/
-    └── widget_test.dart
+│       ├── resumen_card.dart               # Tarjeta de balance/ingreso/egreso mensual
+│       ├── movimiento_tile.dart            # Item de lista con icono de categoría
+│       ├── categoria_chart.dart            # Gráfico de dona por categoría
+│       ├── tendencia_chart.dart            # Gráfico de líneas de tendencia mensual
+│       └── dashboard_skeleton.dart         # Skeleton loading mientras carga datos
+├── test/
+│   └── widget_test.dart
+├── android/
+├── ios/
+└── pubspec.yaml
 ```
 
 ---
 
 ## 🎨 Paleta de colores
 
-| Token | Color | Hex |
-|---|---|---|
-| Primary | Morado vibrante | `#6C63FF` |
-| Secondary | Azul fuerte | `#3D5AF1` |
-| Background | Blanco azulado | `#F4F6FF` |
-| Ingreso | Verde | `#4CAF50` |
-| Egreso | Rojo | `#E53935` |
-| Text | Casi negro | `#1A1A2E` |
+### Modo claro
+
+| Token           | Descripción        | Hex         |
+| --------------- | ------------------- | ----------- |
+| `primary`     | Morado vibrante     | `#5B5AF7` |
+| `primaryDark` | Morado oscuro       | `#2F46D8` |
+| `accent`      | Teal/turquesa       | `#12B8A6` |
+| `background`  | Fondo gris suave    | `#F6F7FB` |
+| `surface`     | Blanco puro         | `#FFFFFF` |
+| `income`      | Verde ingresos      | `#169B62` |
+| `expense`     | Rojo egresos        | `#D64545` |
+| `warning`     | Naranja advertencia | `#FFB547` |
+
+### Modo oscuro
+
+| Token          | Descripción      | Hex         |
+| -------------- | ----------------- | ----------- |
+| `primary`    | Morado suave      | `#8D8CFF` |
+| `background` | Fondo muy oscuro  | `#0F1220` |
+| `surface`    | Superficie oscura | `#181B2A` |
+| `income`     | Verde claro       | `#4ADE80` |
+| `expense`    | Rojo claro        | `#FF6B6B` |
 
 ---
 
 ## 📋 Categorías disponibles
 
-| Icono | Categoría | Icono | Categoría |
-|:---:|---|:---:|---|
-| 🍔 | Comida | 🎮 | Ocio |
-| 🚗 | Transporte | 👕 | Ropa |
-| 🏠 | Vivienda | 🎓 | Educación |
-| ❤️ | Salud | 💼 | Trabajo |
-| 💵 | Salario | ➕ | Otros |
+| Icono | Categoría | Disponible en      |
+| :---: | ---------- | ------------------ |
+|  🍔  | Comida     | Egresos            |
+|  🚗  | Transporte | Egresos            |
+|  🏠  | Vivienda   | Egresos            |
+| ❤️ | Salud      | Egresos            |
+|  🎮  | Ocio       | Egresos            |
+|  👕  | Ropa       | Egresos            |
+|  🎓  | Educación | Egresos            |
+|  💼  | Trabajo    | Egresos / Ingresos |
+|  💵  | Salario    | Ingresos           |
+|  ➕  | Otros      | Egresos / Ingresos |
+
+> Las categorías disponibles en el formulario se filtran automáticamente según el tipo seleccionado (ingreso o egreso).
 
 ---
 
@@ -91,7 +112,7 @@ mi_bolsillo/
 
 ```bash
 # 1. Clona el repositorio
-git clone https://github.com/TU_USUARIO/mi_bolsillo.git
+git clone https://github.com/RCHUCOYA/mi_bolsillo.git
 
 # 2. Entra al directorio
 cd mi_bolsillo
@@ -120,30 +141,71 @@ flutter build ipa --release
 
 ## 📦 Dependencias
 
-| Paquete | Versión | Uso |
-|---|---|---|
-| [`sqflite`](https://pub.dev/packages/sqflite) | `^2.3.2` | Base de datos SQLite local |
-| [`path`](https://pub.dev/packages/path) | `^1.9.0` | Resolución de rutas de archivo |
-| [`intl`](https://pub.dev/packages/intl) | `^0.20.0` | Formato de fechas y moneda |
-| `flutter_localizations` | SDK | Localización en español |
+| Paquete                                            | Versión    | Uso                                         |
+| -------------------------------------------------- | ----------- | ------------------------------------------- |
+| [`sqflite`](https://pub.dev/packages/sqflite)       | `^2.3.2`  | Base de datos SQLite local                  |
+| [`path`](https://pub.dev/packages/path)             | `^1.9.0`  | Resolución de rutas del archivo`.db`     |
+| [`intl`](https://pub.dev/packages/intl)             | `^0.20.0` | Formato de fechas (`DateFormat`) y moneda |
+| [`share_plus`](https://pub.dev/packages/share_plus) | `^13.2.0` | Compartir datos desde el dashboard          |
+| `flutter_localizations`                          | SDK         | Localización en español (`es_ES`)       |
+
+**Dev dependencies**
+
+| Paquete           | Versión   | Uso                                |
+| ----------------- | ---------- | ---------------------------------- |
+| `flutter_lints` | `^6.0.0` | Reglas de estilo Dart recomendadas |
 
 ---
 
-## 🗄️ Modelo de datos
+## � Base de datos
+
+### Archivo
+
+- **Nombre:** `mibolsillo.db`
+- **Ubicación en Android:** `/data/data/com.example.mi_bolsillo/databases/mibolsillo.db`
+- **Motor:** SQLite vía `sqflite ^2.3.2`
+- **Versión de esquema:** `1`
+
+### Tabla `movimientos`
+
+```sql
+CREATE TABLE movimientos (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  titulo    TEXT    NOT NULL,
+  monto     REAL    NOT NULL,
+  categoria TEXT    NOT NULL,
+  fecha     TEXT    NOT NULL,   -- formato: 'yyyy-MM-dd'
+  tipo      TEXT    NOT NULL,   -- 'ingreso' | 'egreso'
+  notas     TEXT                -- puede ser vacío
+);
+```
+
+### Modelo Dart
 
 ```dart
 class Movimiento {
   final int?   id;         // PK autoincrement
   final String titulo;     // Nombre del movimiento
-  final double monto;      // Mayor a 0
-  final String categoria;  // De la lista fija de categorías
-  final String fecha;      // Formato yyyy-MM-dd
+  final double monto;      // Valor positivo
+  final String categoria;  // Una de las 10 categorías definidas
+  final String fecha;      // 'yyyy-MM-dd'
   final String tipo;       // 'ingreso' | 'egreso'
-  final String notas;      // Opcional
+  final String notas;      // Opcional, default ''
 }
 ```
 
-**Tabla SQL:** `movimientos` en `mibolsillo.db`
+### Métodos disponibles en `DatabaseHelper`
+
+| Método                                             | Descripción                                      |
+| --------------------------------------------------- | ------------------------------------------------- |
+| `insertMovimiento(m)`                             | Inserta un movimiento nuevo                       |
+| `getAllMovimientos()`                             | Devuelve todos ordenados por fecha DESC           |
+| `getMovimientosFiltrados({tipo, categoria, mes})` | Filtra por cualquier combinación                 |
+| `updateMovimiento(m)`                             | Actualiza un movimiento existente por id          |
+| `deleteMovimiento(id)`                            | Elimina por id                                    |
+| `getTotalByTipo(tipo, {mes})`                     | Suma total de ingresos o egresos del mes          |
+| `getTotalesPorCategoria({mes, tipo})`             | Mapa`categoria → total` agrupado               |
+| `getTotalesPorUltimosMeses(n)`                    | Lista de ingresos/egresos de los últimos n meses |
 
 ---
 
@@ -178,7 +240,3 @@ Este proyecto está bajo la licencia **MIT**. Consulta el archivo [LICENSE](LICE
 ---
 
 <div align="center">
-
-⭐ Si este proyecto te fue útil, ¡dale una estrella en GitHub!
-
-</div>
