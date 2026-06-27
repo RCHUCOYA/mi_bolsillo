@@ -36,7 +36,7 @@ class ResumenCard extends StatelessWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       decoration: BoxDecoration(
         gradient: colors.primaryGradient,
         borderRadius: BorderRadius.circular(AppRadius.lg),

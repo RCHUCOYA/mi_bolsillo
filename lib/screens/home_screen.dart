@@ -215,14 +215,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       children: [
                         if (!_cargando) ...[
-                          Transform.translate(
-                            offset: const Offset(0, -10),
-                            child: ResumenCard(
-                              ingresos: _ingresos,
-                              egresos: _egresos,
-                              ingresosAnterior: _ingresosAnterior,
-                              egresosAnterior: _egresosAnterior,
-                            ),
+                          ResumenCard(
+                            ingresos: _ingresos,
+                            egresos: _egresos,
+                            ingresosAnterior: _ingresosAnterior,
+                            egresosAnterior: _egresosAnterior,
                           ),
                           CategoriaChart(
                             totales: _totalesPorCategoria,
