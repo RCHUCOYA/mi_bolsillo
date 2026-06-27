@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../database/database_helper.dart';
 import '../models/movimiento_model.dart';
@@ -10,7 +11,10 @@ import '../widgets/categoria_chart.dart';
 import '../widgets/dashboard_skeleton.dart';
 import '../widgets/movimiento_tile.dart';
 import '../widgets/resumen_card.dart';
+import '../widgets/tendencia_chart.dart';
 import 'form_screen.dart';
+
+enum _Orden { fecha, monto, alfabetico }
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,15 +26,22 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final DatabaseHelper _db = DatabaseHelper();
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchCtrl = TextEditingController();
 
   List<Movimiento> _movimientos = [];
   Map<String, double> _totalesPorCategoria = {};
   double _ingresos = 0;
   double _egresos = 0;
+  double _ingresosAnterior = 0;
+  double _egresosAnterior = 0;
+  List<Map<String, dynamic>> _tendenciaDatos = [];
   bool _cargando = true;
   bool _mostrarFabExtendido = true;
 
   String _filtroActivo = 'Todos';
+  String _busqueda = '';
+  bool _buscando = false;
+  _Orden _orden = _Orden.fecha;
   DateTime _mesSeleccionado = DateTime(
     DateTime.now().year,
     DateTime.now().month,
@@ -48,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollController
       ..removeListener(_actualizarFab)
       ..dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -73,24 +85,48 @@ class _HomeScreenState extends State<HomeScreen> {
       categoriaFiltro = _filtroActivo;
     }
 
-    final movimientos = await _db.getMovimientosFiltrados(
-      tipo: tipoFiltro,
-      categoria: categoriaFiltro,
-      mes: _mesSeleccionado,
+    final mesPrevio = DateTime(
+      _mesSeleccionado.year,
+      _mesSeleccionado.month - 1,
     );
-    final ingresos = await _db.getTotalByTipo('ingreso', mes: _mesSeleccionado);
-    final egresos = await _db.getTotalByTipo('egreso', mes: _mesSeleccionado);
-    final totalesPorCategoria = await _db.getTotalesPorCategoria(
-      mes: _mesSeleccionado,
-      tipo: 'egreso',
-    );
+
+    final results = await Future.wait([
+      _db.getMovimientosFiltrados(
+        tipo: tipoFiltro,
+        categoria: categoriaFiltro,
+        mes: _mesSeleccionado,
+      ),
+      _db.getTotalByTipo('ingreso', mes: _mesSeleccionado),
+      _db.getTotalByTipo('egreso', mes: _mesSeleccionado),
+      _db.getTotalesPorCategoria(mes: _mesSeleccionado, tipo: 'egreso'),
+      _db.getTotalByTipo('ingreso', mes: mesPrevio),
+      _db.getTotalByTipo('egreso', mes: mesPrevio),
+      _db.getTotalesPorUltimosMeses(6),
+    ]);
+
+    var movimientos = results[0] as List<Movimiento>;
+
+    // Aplicar orden
+    switch (_orden) {
+      case _Orden.monto:
+        movimientos = [...movimientos]
+          ..sort((a, b) => b.monto.compareTo(a.monto));
+      case _Orden.alfabetico:
+        movimientos = [...movimientos]
+          ..sort((a, b) => a.titulo.compareTo(b.titulo));
+      case _Orden.fecha:
+        break;
+    }
 
     if (mounted) {
       setState(() {
         _movimientos = movimientos;
-        _ingresos = ingresos;
-        _egresos = egresos;
-        _totalesPorCategoria = totalesPorCategoria;
+        _ingresos = results[1] as double;
+        _egresos = results[2] as double;
+        _totalesPorCategoria = results[3] as Map<String, double>;
+        _ingresosAnterior = results[4] as double;
+        _egresosAnterior = results[5] as double;
+        _tendenciaDatos = results[6] as List<Map<String, dynamic>>;
         _cargando = false;
       });
     }
@@ -115,12 +151,58 @@ class _HomeScreenState extends State<HomeScreen> {
     if (result == true) _cargarDatos();
   }
 
+  // ── Búsqueda y filtrado en memoria ────────────────────────────────────────
+
+  List<Movimiento> get _movimientosFiltrados {
+    if (_busqueda.trim().isEmpty) return _movimientos;
+    final q = _busqueda.trim().toLowerCase();
+    return _movimientos.where((m) {
+      return m.titulo.toLowerCase().contains(q) ||
+          m.categoria.toLowerCase().contains(q) ||
+          m.notas.toLowerCase().contains(q);
+    }).toList();
+  }
+
+  void _toggleSearch() {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _buscando = !_buscando;
+      if (!_buscando) {
+        _busqueda = '';
+        _searchCtrl.clear();
+      }
+    });
+  }
+
+  Future<void> _exportarCSV() async {
+    if (_movimientos.isEmpty) return;
+    HapticFeedback.selectionClick();
+
+    final mesLabel = DateFormat('MMMM_yyyy', 'es').format(_mesSeleccionado);
+    final rows = [
+      'Titulo,Monto,Tipo,Categoria,Fecha,Notas',
+      ..._movimientos.map((m) {
+        final titulo = '"${m.titulo.replaceAll('"', '""')}"';
+        final notas = '"${m.notas.replaceAll('"', '""')}"';
+        return '$titulo,${m.monto},${m.tipo},${m.categoria},${m.fecha},$notas';
+      }),
+    ];
+
+    await SharePlus.instance.share(
+      ShareParams(
+        text: rows.join('\n'),
+        subject: 'MiBolsillo - $mesLabel',
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
           _buildHeader(),
+          if (_buscando) _buildBarraBusqueda(),
           Expanded(
             child: RefreshIndicator(
               color: context.colors.primary,
@@ -138,12 +220,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: ResumenCard(
                               ingresos: _ingresos,
                               egresos: _egresos,
+                              ingresosAnterior: _ingresosAnterior,
+                              egresosAnterior: _egresosAnterior,
                             ),
                           ),
                           CategoriaChart(
                             totales: _totalesPorCategoria,
                             egresos: _egresos,
                           ),
+                          TendenciaChart(datos: _tendenciaDatos),
                           _buildInsight(),
                           _buildFiltros(),
                           const SizedBox(height: 10),
@@ -153,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   if (_cargando)
                     const DashboardSkeleton()
-                  else if (_movimientos.isEmpty)
+                  else if (_movimientosFiltrados.isEmpty)
                     SliverToBoxAdapter(child: _buildEstadoVacio())
                   else
                     _buildMovimientosAgrupados(),
@@ -171,9 +256,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final colors = context.colors;
     final mesAnio = DateFormat('MMMM yyyy', 'es').format(_mesSeleccionado);
     final mesCapitalizado = mesAnio[0].toUpperCase() + mesAnio.substring(1);
-    final movimientosLabel = _movimientos.length == 1
-        ? '1 movimiento'
-        : '${_movimientos.length} movimientos';
+    final lista = _movimientosFiltrados;
+    final movimientosLabel =
+        lista.length == 1 ? '1 movimiento' : '${lista.length} movimientos';
 
     return Container(
       decoration: BoxDecoration(gradient: colors.primaryGradient),
@@ -210,6 +295,39 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
+                  // Exportar CSV
+                  IconButton(
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
+                    icon: Icon(
+                      Icons.ios_share_rounded,
+                      color: Colors.white.withValues(
+                        alpha: _movimientos.isEmpty ? 0.38 : 1.0,
+                      ),
+                      size: 20,
+                    ),
+                    onPressed: _movimientos.isEmpty ? null : _exportarCSV,
+                  ),
+                  // Búsqueda
+                  IconButton(
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
+                    icon: Icon(
+                      _buscando
+                          ? Icons.search_off_rounded
+                          : Icons.search_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    onPressed: _toggleSearch,
+                  ),
+                  const SizedBox(width: 4),
                   _MonthSelector(
                     label: mesCapitalizado,
                     onPrevious: () => _cambiarMes(-1),
@@ -258,6 +376,50 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildBarraBusqueda() {
+    final colors = context.colors;
+    return Container(
+      color: colors.background,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+      child: TextField(
+        controller: _searchCtrl,
+        autofocus: true,
+        onChanged: (v) => setState(() => _busqueda = v),
+        decoration: InputDecoration(
+          hintText: 'Buscar por título, categoría...',
+          prefixIcon: Icon(Icons.search_rounded, color: colors.primary),
+          suffixIcon: _busqueda.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.clear_rounded,
+                    color: colors.textMuted,
+                  ),
+                  onPressed: () {
+                    _searchCtrl.clear();
+                    setState(() => _busqueda = '');
+                  },
+                )
+              : null,
+          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            borderSide: BorderSide(color: colors.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            borderSide: BorderSide(color: colors.primary),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            borderSide: BorderSide(color: colors.border),
+          ),
+          filled: true,
+          fillColor: colors.surface,
+        ),
+      ),
+    );
+  }
+
   Widget _buildFiltros() {
     final colors = context.colors;
     final filtros = [
@@ -279,56 +441,139 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return SizedBox(
       height: 42,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: filtros.length,
-        separatorBuilder: (_, x) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final filtro = filtros[index];
-          final label = filtro['label'] as String;
-          final icono = filtro['icono'] as IconData;
-          final color = filtro['color'] as Color? ?? colors.primary;
-          final activo = _filtroActivo == label;
+      child: Row(
+        children: [
+          Expanded(
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: filtros.length,
+              separatorBuilder: (_, x) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final filtro = filtros[index];
+                final label = filtro['label'] as String;
+                final icono = filtro['icono'] as IconData;
+                final color = filtro['color'] as Color? ?? colors.primary;
+                final activo = _filtroActivo == label;
 
-          return ChoiceChip(
-            selected: activo,
-            showCheckmark: false,
-            avatar: Icon(icono, size: 16, color: activo ? Colors.white : color),
-            label: Text(label),
-            labelStyle: TextStyle(
-              color: activo ? Colors.white : colors.text,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
+                return ChoiceChip(
+                  selected: activo,
+                  showCheckmark: false,
+                  avatar: Icon(
+                    icono,
+                    size: 16,
+                    color: activo ? Colors.white : color,
+                  ),
+                  label: Text(label),
+                  labelStyle: TextStyle(
+                    color: activo ? Colors.white : colors.text,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                  selectedColor: color,
+                  backgroundColor: colors.surface,
+                  side: BorderSide(color: activo ? color : colors.border),
+                  shape: const StadiumBorder(),
+                  onSelected: (_) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _filtroActivo = label);
+                    _cargarDatos();
+                  },
+                );
+              },
             ),
-            selectedColor: color,
-            backgroundColor: colors.surface,
-            side: BorderSide(color: activo ? color : colors.border),
-            shape: const StadiumBorder(),
-            onSelected: (_) {
-              HapticFeedback.selectionClick();
-              setState(() => _filtroActivo = label);
-              _cargarDatos();
-            },
-          );
-        },
+          ),
+          // Botón de ordenamiento
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: PopupMenuButton<_Orden>(
+              tooltip: 'Ordenar',
+              icon: Icon(
+                Icons.sort_rounded,
+                color: _orden != _Orden.fecha
+                    ? colors.primary
+                    : colors.textMuted,
+                size: 22,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              onSelected: (value) {
+                HapticFeedback.selectionClick();
+                setState(() => _orden = value);
+                _cargarDatos();
+              },
+              itemBuilder: (_) => [
+                _ordenItem(_Orden.fecha, Icons.access_time_rounded,
+                    'Más reciente', colors),
+                _ordenItem(_Orden.monto, Icons.attach_money_rounded,
+                    'Mayor monto', colors),
+                _ordenItem(_Orden.alfabetico, Icons.sort_by_alpha_rounded,
+                    'Alfabético', colors),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  PopupMenuItem<_Orden> _ordenItem(
+    _Orden value,
+    IconData icon,
+    String label,
+    AppPalette colors,
+  ) {
+    final selected = _orden == value;
+    return PopupMenuItem(
+      value: value,
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 18,
+            color: selected ? colors.primary : colors.textMuted,
+          ),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: TextStyle(
+              color: selected ? colors.primary : colors.text,
+              fontWeight: selected ? FontWeight.w800 : FontWeight.normal,
+            ),
+          ),
+          if (selected) ...[
+            const Spacer(),
+            Icon(Icons.check_rounded, size: 16, color: colors.primary),
+          ],
+        ],
       ),
     );
   }
 
   Widget _buildMovimientosAgrupados() {
+    final lista = _movimientosFiltrados;
     final items = <Widget>[];
-    String? ultimoGrupo;
 
-    for (final movimiento in _movimientos) {
-      final grupo = _grupoFecha(movimiento.fecha);
-      if (grupo != ultimoGrupo) {
-        items.add(_SeccionFecha(titulo: grupo));
-        ultimoGrupo = grupo;
+    // Solo agrupar por fecha cuando el orden es cronológico y no hay búsqueda activa
+    if (_orden == _Orden.fecha && _busqueda.isEmpty) {
+      String? ultimoGrupo;
+      for (final movimiento in lista) {
+        final grupo = _grupoFecha(movimiento.fecha);
+        if (grupo != ultimoGrupo) {
+          items.add(_SeccionFecha(titulo: grupo));
+          ultimoGrupo = grupo;
+        }
+        items.add(
+          MovimientoTile(movimiento: movimiento, onChanged: _cargarDatos),
+        );
       }
-      items.add(
-        MovimientoTile(movimiento: movimiento, onChanged: _cargarDatos),
-      );
+    } else {
+      for (final movimiento in lista) {
+        items.add(
+          MovimientoTile(movimiento: movimiento, onChanged: _cargarDatos),
+        );
+      }
     }
 
     items.add(const SizedBox(height: 96));
@@ -451,11 +696,19 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildEstadoVacio() {
     final colors = context.colors;
     final hayFiltro = _filtroActivo != 'Todos';
+    final hayBusqueda = _busqueda.isNotEmpty;
     final labelMes = DateFormat('MMMM yyyy', 'es').format(_mesSeleccionado);
-    final titulo = hayFiltro ? 'Sin resultados' : 'Sin movimientos';
-    final mensaje = hayFiltro
-        ? 'No hay movimientos para "$_filtroActivo" en $labelMes.'
-        : 'Registra tu primer ingreso o gasto para ver el resumen de $labelMes.';
+
+    final titulo = hayBusqueda
+        ? 'Sin resultados'
+        : hayFiltro
+            ? 'Sin resultados'
+            : 'Sin movimientos';
+    final mensaje = hayBusqueda
+        ? 'No hay movimientos para "$_busqueda" en $labelMes.'
+        : hayFiltro
+            ? 'No hay movimientos para "$_filtroActivo" en $labelMes.'
+            : 'Registra tu primer ingreso o gasto para ver el resumen de $labelMes.';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(28, 18, 28, 112),
@@ -471,9 +724,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Icon(
-                hayFiltro
-                    ? Icons.filter_alt_off_rounded
-                    : Icons.receipt_long_rounded,
+                hayBusqueda
+                    ? Icons.search_off_rounded
+                    : hayFiltro
+                        ? Icons.filter_alt_off_rounded
+                        : Icons.receipt_long_rounded,
                 size: 42,
                 color: colors.primary,
               ),
@@ -499,14 +754,29 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
-              onPressed: hayFiltro
+              onPressed: hayBusqueda
                   ? () {
-                      setState(() => _filtroActivo = 'Todos');
-                      _cargarDatos();
+                      _searchCtrl.clear();
+                      setState(() => _busqueda = '');
                     }
-                  : () => _navegarAFormulario(),
-              icon: Icon(hayFiltro ? Icons.clear_rounded : Icons.add_rounded),
-              label: Text(hayFiltro ? 'Limpiar filtro' : 'Agregar movimiento'),
+                  : hayFiltro
+                      ? () {
+                          setState(() => _filtroActivo = 'Todos');
+                          _cargarDatos();
+                        }
+                      : () => _navegarAFormulario(),
+              icon: Icon(
+                hayBusqueda || hayFiltro
+                    ? Icons.clear_rounded
+                    : Icons.add_rounded,
+              ),
+              label: Text(
+                hayBusqueda
+                    ? 'Limpiar búsqueda'
+                    : hayFiltro
+                        ? 'Limpiar filtro'
+                        : 'Agregar movimiento',
+              ),
               style: FilledButton.styleFrom(
                 backgroundColor: colors.primary,
                 foregroundColor: Colors.white,

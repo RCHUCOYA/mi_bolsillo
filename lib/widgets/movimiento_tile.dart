@@ -100,92 +100,109 @@ class MovimientoTile extends StatelessWidget {
                 HapticFeedback.mediumImpact();
                 await _confirmarEliminar(context);
               },
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: colors.border),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: colorCategoria.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: Icon(
-                        iconoCategoria,
-                        color: colorCategoria,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            movimiento.titulo,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                              color: colors.text,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: colors.border),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(width: 4, color: colorCategoria),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
                           ),
-                          const SizedBox(height: 5),
-                          Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 7,
-                            runSpacing: 4,
+                          child: Row(
                             children: [
-                              _MetaChip(
-                                label: movimiento.categoria,
-                                color: colorCategoria,
-                              ),
-                              Text(
-                                fechaDisplay,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: colors.textMuted,
-                                  fontWeight: FontWeight.w500,
+                              Hero(
+                                tag: 'cat-icon-${movimiento.id ?? movimiento.titulo}',
+                                child: Container(
+                                  width: 46,
+                                  height: 46,
+                                  decoration: BoxDecoration(
+                                    color: colorCategoria.withValues(alpha: 0.14),
+                                    borderRadius: BorderRadius.circular(AppRadius.md),
+                                  ),
+                                  child: Icon(
+                                    iconoCategoria,
+                                    color: colorCategoria,
+                                    size: 22,
+                                  ),
                                 ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      movimiento.titulo,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
+                                        color: colors.text,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Wrap(
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
+                                      spacing: 7,
+                                      runSpacing: 4,
+                                      children: [
+                                        _MetaChip(
+                                          label: movimiento.categoria,
+                                          color: colorCategoria,
+                                        ),
+                                        Text(
+                                          fechaDisplay,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: colors.textMuted,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    esIngreso ? 'Ingreso' : 'Egreso',
+                                    style: TextStyle(
+                                      color: montoColor,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${esIngreso ? '+' : '-'}${formatter.format(movimiento.monto)}',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: montoColor,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          esIngreso ? 'Ingreso' : 'Egreso',
-                          style: TextStyle(
-                            color: montoColor,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${esIngreso ? '+' : '-'}${formatter.format(movimiento.monto)}',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: montoColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

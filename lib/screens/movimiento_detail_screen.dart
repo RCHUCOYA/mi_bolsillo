@@ -121,17 +121,20 @@ class MovimientoDetailScreen extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              color: categoriaColor.withValues(alpha: 0.14),
-                              borderRadius: BorderRadius.circular(AppRadius.lg),
-                            ),
-                            child: Icon(
-                              categoriaIcon,
-                              color: categoriaColor,
-                              size: 28,
+                          Hero(
+                            tag: 'cat-icon-${movimiento.id}',
+                            child: Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: categoriaColor.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(AppRadius.lg),
+                              ),
+                              child: Icon(
+                                categoriaIcon,
+                                color: categoriaColor,
+                                size: 28,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -194,14 +197,15 @@ class MovimientoDetailScreen extends StatelessWidget {
                       : DateFormat('EEEE d MMMM yyyy', 'es').format(fecha),
                   color: colors.primary,
                 ),
-                _DetailRow(
-                  icon: Icons.notes_rounded,
-                  label: 'Notas',
-                  value: movimiento.notas.trim().isEmpty
-                      ? 'Sin notas'
-                      : movimiento.notas,
-                  color: colors.accent,
-                ),
+                if (movimiento.notas.trim().isNotEmpty)
+                  _PostItNotes(notes: movimiento.notas)
+                else
+                  _DetailRow(
+                    icon: Icons.notes_rounded,
+                    label: 'Notas',
+                    value: 'Sin notas',
+                    color: colors.accent,
+                  ),
                 const SizedBox(height: 18),
                 Row(
                   children: [
@@ -291,6 +295,77 @@ class _DetailRow extends StatelessWidget {
                     color: colors.text,
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PostItNotes extends StatelessWidget {
+  final String notes;
+
+  const _PostItNotes({required this.notes});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2E2B1A) : const Color(0xFFFFFDE7),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: isDark ? const Color(0xFF6D5E20) : const Color(0xFFFFEE58),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFEB3B).withValues(alpha: 0.14),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.sticky_note_2_rounded,
+            color: isDark ? const Color(0xFFFFD54F) : const Color(0xFFFFB300),
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Notas',
+                  style: TextStyle(
+                    color: isDark
+                        ? const Color(0xFFFFD54F)
+                        : const Color(0xFFFF8F00),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  notes,
+                  style: TextStyle(
+                    color: isDark
+                        ? const Color(0xFFFFE082)
+                        : const Color(0xFF5D4037),
+                    fontSize: 14,
+                    height: 1.45,
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
               ],

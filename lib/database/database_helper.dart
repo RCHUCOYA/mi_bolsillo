@@ -140,6 +140,33 @@ class DatabaseHelper {
     return totales;
   }
 
+  Future<List<Map<String, dynamic>>> getTotalesPorUltimosMeses(int meses) async {
+    final db = await database;
+    final result = <Map<String, dynamic>>[];
+    final ahora = DateTime.now();
+
+    for (var i = meses - 1; i >= 0; i--) {
+      final mes = DateTime(ahora.year, ahora.month - i, 1);
+      final like = _mesLike(mes);
+
+      final ingresos = await db.rawQuery(
+        "SELECT SUM(monto) as total FROM movimientos WHERE tipo='ingreso' AND fecha LIKE ?",
+        [like],
+      );
+      final egresos = await db.rawQuery(
+        "SELECT SUM(monto) as total FROM movimientos WHERE tipo='egreso' AND fecha LIKE ?",
+        [like],
+      );
+
+      result.add({
+        'mes': mes,
+        'ingresos': (ingresos.first['total'] as num?)?.toDouble() ?? 0.0,
+        'egresos': (egresos.first['total'] as num?)?.toDouble() ?? 0.0,
+      });
+    }
+    return result;
+  }
+
   String _mesLike(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-%';
   }

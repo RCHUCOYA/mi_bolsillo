@@ -2,8 +2,49 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-class DashboardSkeleton extends StatelessWidget {
+class DashboardSkeleton extends StatefulWidget {
   const DashboardSkeleton({super.key});
+
+  @override
+  State<DashboardSkeleton> createState() => _DashboardSkeletonState();
+}
+
+class _DashboardSkeletonState extends State<DashboardSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 950),
+    )..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.28, end: 0.82).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Widget _bone(AppPalette colors, double width, double height, double radius) {
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, _) => Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(radius),
+          color: Color.lerp(colors.surfaceSoft, colors.border, _anim.value),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,68 +52,114 @@ class DashboardSkeleton extends StatelessWidget {
 
     return SliverList(
       delegate: SliverChildListDelegate([
-        _SkeletonBlock(
-          height: 140,
-          margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-          color: colors.surface,
-        ),
-        _SkeletonBlock(
-          height: 120,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-          color: colors.surface,
-        ),
-        ...List.generate(
-          5,
-          (index) => _SkeletonBlock(
-            height: 72,
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-            color: colors.surface,
-          ),
-        ),
-        const SizedBox(height: 96),
-      ]),
-    );
-  }
-}
-
-class _SkeletonBlock extends StatelessWidget {
-  final double height;
-  final EdgeInsets margin;
-  final Color color;
-
-  const _SkeletonBlock({
-    required this.height,
-    required this.margin,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.35, end: 0.78),
-      duration: const Duration(milliseconds: 850),
-      curve: Curves.easeInOut,
-      builder: (context, value, child) {
-        return Container(
-          height: height,
-          margin: margin,
+        // ── ResumenCard skeleton ──────────────────────────────────
+        Container(
+          margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            gradient: LinearGradient(
-              colors: [
-                color,
-                colors.surfaceSoft.withValues(alpha: value),
-                color,
-              ],
-              stops: const [0, 0.5, 1],
-            ),
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: colors.border),
           ),
-        );
-      },
-      onEnd: () {},
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _bone(colors, 38, 38, AppRadius.md),
+                  const SizedBox(width: 12),
+                  _bone(colors, 110, 14, AppRadius.pill),
+                  const Spacer(),
+                  _bone(colors, 68, 22, AppRadius.pill),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _bone(colors, 175, 32, AppRadius.sm),
+              const SizedBox(height: 18),
+              _bone(colors, double.infinity, 7, AppRadius.pill),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(child: _bone(colors, double.infinity, 52, AppRadius.md)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _bone(colors, double.infinity, 52, AppRadius.md)),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        // ── CategoriaChart skeleton ───────────────────────────────
+        Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: colors.border),
+          ),
+          child: Row(
+            children: [
+              _bone(colors, 100, 100, 50),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  children: List.generate(
+                    4,
+                    (i) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _bone(colors, double.infinity, 13, AppRadius.pill),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // ── Tile skeletons ────────────────────────────────────────
+        ...List.generate(
+          4,
+          (_) => Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: colors.border),
+            ),
+            child: Row(
+              children: [
+                _bone(colors, 4, 46, 2),
+                const SizedBox(width: 12),
+                _bone(colors, 46, 46, AppRadius.md),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _bone(colors, 130, 13, AppRadius.pill),
+                      const SizedBox(height: 8),
+                      _bone(colors, 80, 10, AppRadius.pill),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _bone(colors, 38, 10, AppRadius.pill),
+                    const SizedBox(height: 6),
+                    _bone(colors, 72, 14, AppRadius.pill),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 96),
+      ]),
     );
   }
 }
